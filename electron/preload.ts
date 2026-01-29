@@ -8,7 +8,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   db: {
     getClips: () => ipcRenderer.invoke('db-get-clips'),
-    addClip: (clip: { heading: string, content_html: string, content_text: string }) => ipcRenderer.invoke('db-add-clip', clip),
+    addClip: (clip: { heading: string, content_html: string, content_text: string, category: string }) => ipcRenderer.invoke('db-add-clip', clip),
+    updateClip: (clip: { id: number, heading: string, content_html: string, content_text: string, category: string }) => ipcRenderer.invoke('db-update-clip', clip),
     deleteClip: (id: number) => ipcRenderer.invoke('db-delete-clip', id),
   },
   clipboard: {

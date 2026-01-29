@@ -8,8 +8,9 @@ interface Window {
             close: () => void;
         };
         db: {
-            getClips: () => Promise<{ id: number; heading: string; content_html: string; content_text: string; created_at: string }[]>;
-            addClip: (clip: { heading: string; content_html: string; content_text: string }) => Promise<any>;
+            getClips: () => Promise<{ id: number; heading: string; content_html: string; content_text: string; category: string; created_at: string }[]>;
+            addClip: (clip: { heading: string; content_html: string; content_text: string; category: string }) => Promise<any>;
+            updateClip: (clip: { id: number; heading: string; content_html: string; content_text: string; category: string }) => Promise<any>;
             deleteClip: (id: number) => Promise<any>;
         };
         clipboard: {

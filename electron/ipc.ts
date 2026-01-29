@@ -1,5 +1,5 @@
 import { ipcMain, clipboard, BrowserWindow } from "electron";
-import { getClips, addClip, deleteClip } from "./db";
+import { getClips, addClip, deleteClip, updateClip } from "./db";
 
 export function setupIPC(win: BrowserWindow) {
     // Window Controls
@@ -20,19 +20,28 @@ export function setupIPC(win: BrowserWindow) {
     });
 
     // Database
+    ipcMain.removeHandler("db-get-clips");
     ipcMain.handle("db-get-clips", () => {
         return getClips();
     });
 
-    ipcMain.handle("db-add-clip", (_, { heading, content_html, content_text }) => {
-        return addClip(heading, content_html, content_text);
+    ipcMain.removeHandler("db-add-clip");
+    ipcMain.handle("db-add-clip", (_, { heading, content_html, content_text, category }) => {
+        return addClip(heading, content_html, content_text, category);
     });
 
+    ipcMain.removeHandler("db-update-clip");
+    ipcMain.handle("db-update-clip", (_, { id, heading, content_html, content_text, category }) => {
+        return updateClip(id, heading, content_html, content_text, category);
+    });
+
+    ipcMain.removeHandler("db-delete-clip");
     ipcMain.handle("db-delete-clip", (_, id) => {
         return deleteClip(id);
     });
 
     // Clipboard
+    ipcMain.removeHandler("clipboard-read");
     ipcMain.handle("clipboard-read", () => {
         return {
             text: clipboard.readText(),
@@ -40,6 +49,7 @@ export function setupIPC(win: BrowserWindow) {
         };
     });
 
+    ipcMain.removeHandler("clipboard-write");
     ipcMain.handle("clipboard-write", (_, { text, html }) => {
         if (html) {
             clipboard.write({ text, html });
