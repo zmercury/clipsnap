@@ -46,10 +46,24 @@ export function initDB() {
       content_text TEXT,
       category TEXT,
       page_id INTEGER,
+      is_pinned INTEGER DEFAULT 0,
+      content_type TEXT DEFAULT 'text',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
     )
   `);
+
+    // Add columns if they don't exist (migration)
+    const clipsTableInfo = db.prepare("PRAGMA table_info(clips)").all() as any[];
+    const hasPinned = clipsTableInfo.some(col => col.name === 'is_pinned');
+    const hasContentType = clipsTableInfo.some(col => col.name === 'content_type');
+
+    if (!hasPinned) {
+        db.exec(`ALTER TABLE clips ADD COLUMN is_pinned INTEGER DEFAULT 0`);
+    }
+    if (!hasContentType) {
+        db.exec(`ALTER TABLE clips ADD COLUMN content_type TEXT DEFAULT 'text'`);
+    }
 }
 
 export interface Page {
@@ -66,6 +80,8 @@ export interface Clip {
     content_text: string;
     category: string;
     page_id: number;
+    is_pinned: number;
+    content_type: string;
     created_at: string;
 }
 
@@ -93,16 +109,16 @@ export function deletePage(id: number) {
 // Clip functions (updated to filter by page)
 export function getClips(pageId?: number): Clip[] {
     if (pageId) {
-        const stmt = db.prepare('SELECT * FROM clips WHERE page_id = ? ORDER BY created_at DESC');
+        const stmt = db.prepare('SELECT * FROM clips WHERE page_id = ? ORDER BY is_pinned DESC, created_at DESC');
         return stmt.all(pageId) as Clip[];
     }
-    const stmt = db.prepare('SELECT * FROM clips ORDER BY created_at DESC');
+    const stmt = db.prepare('SELECT * FROM clips ORDER BY is_pinned DESC, created_at DESC');
     return stmt.all() as Clip[];
 }
 
-export function addClip(heading: string, content_html: string, content_text: string, category: string, pageId: number) {
-    const stmt = db.prepare('INSERT INTO clips (heading, content_html, content_text, category, page_id) VALUES (?, ?, ?, ?, ?)');
-    return stmt.run(heading, content_html, content_text, category, pageId);
+export function addClip(heading: string, content_html: string, content_text: string, category: string, pageId: number, contentType: string = 'text') {
+    const stmt = db.prepare('INSERT INTO clips (heading, content_html, content_text, category, page_id, content_type) VALUES (?, ?, ?, ?, ?, ?)');
+    return stmt.run(heading, content_html, content_text, category, pageId, contentType);
 }
 
 export function updateClip(id: number, heading: string, content_html: string, content_text: string, category: string) {
@@ -113,4 +129,15 @@ export function updateClip(id: number, heading: string, content_html: string, co
 export function deleteClip(id: number) {
     const stmt = db.prepare('DELETE FROM clips WHERE id = ?');
     return stmt.run(id);
+}
+
+export function togglePinClip(id: number) {
+    const stmt = db.prepare('UPDATE clips SET is_pinned = NOT is_pinned WHERE id = ?');
+    return stmt.run(id);
+}
+
+export function searchClips(query: string): Clip[] {
+    const stmt = db.prepare('SELECT * FROM clips WHERE heading LIKE ? OR content_text LIKE ? ORDER BY is_pinned DESC, created_at DESC');
+    const searchPattern = `%${query}%`;
+    return stmt.all(searchPattern, searchPattern) as Clip[];
 }

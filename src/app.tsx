@@ -4,27 +4,13 @@ import { Sidebar } from './components/Sidebar'
 import { ClipCard } from './components/ClipCard'
 import { ClipFormModal } from './components/ClipFormModal'
 import { PageFormModal } from './components/PageFormModal'
+import { SearchBar } from './components/SearchBar'
+import { ClipPreview } from './components/ClipPreview'
 import { ThemeProvider } from './components/ThemeProvider'
-import { Plus } from "lucide-react";
+import { Plus, Grid3x3, List } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
 
-interface Page {
-  id: number;
-  name: string;
-  icon: string;
-  created_at: string;
-}
-
-interface Clip {
-  id: number;
-  heading: string;
-  content_html: string;
-  content_text: string;
-  category: string;
-  page_id: number;
-  created_at: string;
-}
 
 function AppContent() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -35,6 +21,9 @@ function AppContent() {
   const [isClipModalOpen, setIsClipModalOpen] = useState(false);
   const [isPageModalOpen, setIsPageModalOpen] = useState(false);
   const [editingClip, setEditingClip] = useState<Clip | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
+  const [previewClip, setPreviewClip] = useState<Clip | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadPages()
@@ -69,6 +58,9 @@ function AppContent() {
     return clips.filter(c => c.category === activeFilter);
   }, [clips, activeFilter]);
 
+  const pinnedClips = useMemo(() => filteredClips.filter(c => c.is_pinned === 1), [filteredClips]);
+  const unpinnedClips = useMemo(() => filteredClips.filter(c => c.is_pinned === 0), [filteredClips]);
+
   const handleSavePage = async (data: { id?: number, name: string, icon: string }) => {
     try {
       if (data.id) {
@@ -76,7 +68,6 @@ function AppContent() {
       } else {
         await window.api.db.addPage({ name: data.name, icon: data.icon });
         await loadPages();
-        // Set the newly created page as active
         const newPages = await window.api.db.getPages();
         const newPage = newPages.find(p => p.name === data.name);
         if (newPage) setActivePage(newPage);
@@ -96,7 +87,6 @@ function AppContent() {
     if (confirm("Delete this page and all its clips?")) {
       await window.api.db.deletePage(pageId);
       await loadPages();
-      // Switch to first available page
       const remainingPages = pages.filter(p => p.id !== pageId);
       if (remainingPages.length > 0) {
         setActivePage(remainingPages[0]);
@@ -108,6 +98,9 @@ function AppContent() {
     if (!activePage) return;
 
     try {
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const contentType = urlRegex.test(data.content) ? 'link' : 'text';
+
       if (data.id) {
         const original = clips.find(c => c.id === data.id);
         await window.api.db.updateClip({
@@ -123,7 +116,8 @@ function AppContent() {
           content_text: data.content,
           content_html: "",
           category: data.category,
-          pageId: activePage.id
+          pageId: activePage.id,
+          contentType
         });
       }
       await loadClips(activePage.id);
@@ -142,6 +136,12 @@ function AppContent() {
     }
   }
 
+  const handleTogglePin = async (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    await window.api.db.togglePin(id);
+    if (activePage) await loadClips(activePage.id);
+  }
+
   const handleCopyClip = async (clip: Clip) => {
     try {
       await window.api.clipboard.write({
@@ -158,6 +158,29 @@ function AppContent() {
       toast.error("Failed to copy clip");
     }
   }
+
+  const handleSearchResultClick = (_clip: Clip, page: Page) => {
+    setActivePage(page);
+    setActiveFilter(null);
+  }
+
+  const handleClipHover = (clip: Clip) => {
+    const timeout = setTimeout(() => {
+      setPreviewClip(clip);
+    }, 500);
+    setHoverTimeout(timeout);
+  }
+
+  const handleClipLeave = () => {
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+  }
+
+  const gridCols = viewMode === 'compact'
+    ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8'
+    : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6';
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background/90 backdrop-blur-2xl text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
@@ -184,15 +207,33 @@ function AppContent() {
                   <span className="text-4xl">{activePage?.icon}</span>
                   {activePage?.name || "No Page"}
                 </h1>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => { setEditingClip(null); setIsClipModalOpen(true); }}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all"
-                  disabled={!activePage}
-                >
-                  <Plus size={18} /> New Clip
-                </motion.button>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 bg-muted/30 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                      title="Grid View"
+                    >
+                      <Grid3x3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('compact')}
+                      className={`p-1.5 rounded transition-colors ${viewMode === 'compact' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                      title="Compact View"
+                    >
+                      <List size={16} />
+                    </button>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => { setEditingClip(null); setIsClipModalOpen(true); }}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all"
+                    disabled={!activePage}
+                  >
+                    <Plus size={18} /> New Clip
+                  </motion.button>
+                </div>
               </div>
 
               {/* Filters Row */}
@@ -221,15 +262,51 @@ function AppContent() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 pb-20">
-                {filteredClips.map(clip => (
-                  <ClipCard
+              {/* Pinned Clips Section */}
+              {pinnedClips.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                    📌 Pinned
+                  </h2>
+                  <div className={`grid ${gridCols} gap-3`}>
+                    {pinnedClips.map(clip => (
+                      <div
+                        key={clip.id}
+                        onMouseEnter={() => handleClipHover(clip)}
+                        onMouseLeave={handleClipLeave}
+                      >
+                        <ClipCard
+                          clip={clip}
+                          onClick={() => handleCopyClip(clip)}
+                          onEdit={(e: React.MouseEvent) => { e.stopPropagation(); setEditingClip(clip); setIsClipModalOpen(true); }}
+                          onDelete={(e: React.MouseEvent) => handleDeleteClip(e, clip.id)}
+                          onTogglePin={(e: React.MouseEvent) => handleTogglePin(e, clip.id)}
+                          isPinned={true}
+                          compact={viewMode === 'compact'}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Regular Clips */}
+              <div className={`grid ${gridCols} gap-4 pb-20`}>
+                {unpinnedClips.map(clip => (
+                  <div
                     key={clip.id}
-                    clip={clip}
-                    onClick={() => handleCopyClip(clip)}
-                    onEdit={(e: React.MouseEvent) => { e.stopPropagation(); setEditingClip(clip); setIsClipModalOpen(true); }}
-                    onDelete={(e: React.MouseEvent) => handleDeleteClip(e, clip.id)}
-                  />
+                    onMouseEnter={() => handleClipHover(clip)}
+                    onMouseLeave={handleClipLeave}
+                  >
+                    <ClipCard
+                      clip={clip}
+                      onClick={() => handleCopyClip(clip)}
+                      onEdit={(e: React.MouseEvent) => { e.stopPropagation(); setEditingClip(clip); setIsClipModalOpen(true); }}
+                      onDelete={(e: React.MouseEvent) => handleDeleteClip(e, clip.id)}
+                      onTogglePin={(e: React.MouseEvent) => handleTogglePin(e, clip.id)}
+                      compact={viewMode === 'compact'}
+                    />
+                  </div>
                 ))}
 
                 {filteredClips.length === 0 && (
@@ -246,6 +323,9 @@ function AppContent() {
           </div>
         </main>
       </div>
+
+      <SearchBar pages={pages} onResultClick={handleSearchResultClick} />
+      <ClipPreview clip={previewClip} onClose={() => setPreviewClip(null)} />
 
       <ClipFormModal
         isOpen={isClipModalOpen}

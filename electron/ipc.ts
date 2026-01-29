@@ -1,5 +1,5 @@
 import { ipcMain, clipboard, BrowserWindow } from "electron";
-import { getClips, addClip, deleteClip, updateClip, getPages, addPage, updatePage, deletePage } from "./db";
+import { getClips, addClip, deleteClip, updateClip, getPages, addPage, updatePage, deletePage, togglePinClip, searchClips } from "./db";
 
 export function setupIPC(win: BrowserWindow) {
     // Window Controls
@@ -47,8 +47,8 @@ export function setupIPC(win: BrowserWindow) {
     });
 
     ipcMain.removeHandler("db-add-clip");
-    ipcMain.handle("db-add-clip", (_, { heading, content_html, content_text, category, pageId }) => {
-        return addClip(heading, content_html, content_text, category, pageId);
+    ipcMain.handle("db-add-clip", (_, { heading, content_html, content_text, category, pageId, contentType }) => {
+        return addClip(heading, content_html, content_text, category, pageId, contentType);
     });
 
     ipcMain.removeHandler("db-update-clip");
@@ -59,6 +59,16 @@ export function setupIPC(win: BrowserWindow) {
     ipcMain.removeHandler("db-delete-clip");
     ipcMain.handle("db-delete-clip", (_, id) => {
         return deleteClip(id);
+    });
+
+    ipcMain.removeHandler("db-toggle-pin");
+    ipcMain.handle("db-toggle-pin", (_, id) => {
+        return togglePinClip(id);
+    });
+
+    ipcMain.removeHandler("db-search-clips");
+    ipcMain.handle("db-search-clips", (_, query) => {
+        return searchClips(query);
     });
 
     // Clipboard

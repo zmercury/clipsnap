@@ -14,6 +14,8 @@ interface Clip {
     content_text: string;
     category: string;
     page_id: number;
+    is_pinned: number;
+    content_type: string;
     created_at: string;
 }
 
@@ -30,9 +32,11 @@ interface Window {
             updatePage: (page: { id: number; name: string; icon: string }) => Promise<any>;
             deletePage: (id: number) => Promise<any>;
             getClips: (pageId?: number) => Promise<Clip[]>;
-            addClip: (clip: { heading: string; content_html: string; content_text: string; category: string; pageId: number }) => Promise<any>;
+            addClip: (clip: { heading: string; content_html: string; content_text: string; category: string; pageId: number; contentType?: string }) => Promise<any>;
             updateClip: (clip: { id: number; heading: string; content_html: string; content_text: string; category: string }) => Promise<any>;
             deleteClip: (id: number) => Promise<any>;
+            togglePin: (id: number) => Promise<any>;
+            searchClips: (query: string) => Promise<Clip[]>;
         };
         clipboard: {
             read: () => Promise<{ text: string; html: string }>;
