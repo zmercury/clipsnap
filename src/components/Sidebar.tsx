@@ -26,7 +26,7 @@ export function Sidebar({ isOpen, pages, activePage, onPageChange, onNewPage, on
                     animate={{ width: 220, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="h-full bg-card/40 backdrop-blur-xl border-r border-border/30 overflow-hidden flex flex-col"
+                    className="h-full bg-card/60 backdrop-blur-xl border-r border-border/30 overflow-hidden flex flex-col"
                 >
                     {/* Header with icon-only new page button */}
                     <div className="px-3 py-3 border-b border-border/20 flex items-center justify-between">
@@ -73,7 +73,7 @@ function PageItem({ page, active, onClick, onDelete }: { page: Page, active: boo
     return (
         <div
             className={`group relative flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md transition-all duration-150 cursor-pointer ${active
-                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    ? 'bg-primary/5 text-primary border border-primary/10'
                     : 'text-foreground/60 hover:bg-accent/30 hover:text-foreground border border-transparent'
                 }`}
             onClick={onClick}

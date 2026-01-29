@@ -160,7 +160,7 @@ function AppContent() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background/60 backdrop-blur-2xl text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
+    <div className="h-screen w-screen flex flex-col bg-background/40 backdrop-blur-2xl text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
       <TitleBar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className="flex-1 flex overflow-hidden pt-10">
@@ -176,7 +176,7 @@ function AppContent() {
         <main className="flex-1 flex flex-col min-w-0 relative">
           <div className="p-6 overflow-y-auto h-full scroll-smooth">
             <div className="max-w-[1600px] mx-auto">
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-5">
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
                   <span className="text-4xl">{activePage?.icon}</span>
                   {activePage?.name || "No Page"}
