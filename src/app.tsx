@@ -167,7 +167,7 @@ function AppContent() {
     : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6';
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background/90 backdrop-blur-2xl text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
+    <div className="h-screen w-screen flex flex-col bg-background/95 backdrop-blur-2xl text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
       <TitleBar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className="flex-1 flex overflow-hidden pt-10">
@@ -326,6 +326,7 @@ function AppContent() {
       />
 
       <Toaster theme="system" closeButton richColors />
+      <div className="noise-bg" />
     </div>
   )
 }
