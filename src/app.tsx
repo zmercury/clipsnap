@@ -160,7 +160,7 @@ function AppContent() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background/40 backdrop-blur-2xl text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
+    <div className="h-screen w-screen flex flex-col bg-background/90 backdrop-blur-2xl text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
       <TitleBar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className="flex-1 flex overflow-hidden pt-10">

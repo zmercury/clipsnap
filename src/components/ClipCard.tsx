@@ -39,7 +39,7 @@ export function ClipCard({ clip, onClick, onEdit, onDelete }: ClipCardProps) {
     return (
         <motion.div
             layout
-            className="group relative bg-card/50 backdrop-blur-md border border-border/50 hover:border-primary/50 hover:bg-card/70 rounded-xl p-4 cursor-pointer shadow-sm transition-all duration-300 flex flex-col h-44"
+            className="group relative bg-card/70 backdrop-blur-md border border-border/60 hover:border-primary/60 hover:bg-card/85 rounded-xl p-4 cursor-pointer shadow-sm transition-all duration-300 flex flex-col h-44"
             onClick={onClick}
         >
             <div className="flex justify-between items-start mb-3">
