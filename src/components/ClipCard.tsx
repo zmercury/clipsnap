@@ -56,14 +56,44 @@ function renderContent(text: string, contentType: string) {
 }
 
 export function ClipCard({ clip, onClick, onEdit, onDelete, onTogglePin, isPinned = false, compact = false }: ClipCardProps) {
-    const height = isPinned ? 'h-20' : compact ? 'h-24' : 'h-32';
+    // Compact View (List-like)
+    if (compact && !isPinned) {
+        return (
+            <motion.div
+                className="group relative bg-card/60 backdrop-blur-md border border-border/40 hover:border-primary/40 hover:bg-card/80 rounded-md px-3 py-2 cursor-pointer transition-all duration-200 flex items-center gap-3 overflow-hidden"
+                onClick={onClick}
+            >
+                <div className={clsx("w-1 h-4 rounded-full flex-shrink-0", getCategoryColor(clip.category))} />
+
+                <h3 className="text-xs font-semibold text-foreground truncate min-w-[120px] max-w-[200px] tracking-tight">{clip.heading}</h3>
+
+                <p className="text-[11px] text-muted-foreground/70 truncate flex-1 font-normal">
+                    {clip.content_text || "No content"}
+                </p>
+
+                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={onTogglePin} className="p-1 hover:bg-background/80 rounded text-muted-foreground/60 hover:text-primary transition-colors">
+                        <Pin size={11} className={clip.is_pinned === 1 ? "fill-current" : ""} />
+                    </button>
+                    <button onClick={onEdit} className="p-1 hover:bg-background/80 rounded text-muted-foreground/60 hover:text-primary transition-colors">
+                        <Pencil size={11} />
+                    </button>
+                    <button onClick={onDelete} className="p-1 hover:bg-background/80 rounded text-muted-foreground/60 hover:text-destructive transition-colors">
+                        <Trash2 size={11} />
+                    </button>
+                </div>
+            </motion.div>
+        );
+    }
+
+    // Grid/Pinned View
+    const height = isPinned ? 'h-20' : 'h-32';
     const padding = isPinned ? 'p-2' : 'p-3';
     const textSize = isPinned ? 'text-xs' : 'text-sm';
     const contentSize = isPinned ? 'text-[10px]' : 'text-xs';
 
     return (
         <motion.div
-            layout
             className={clsx(
                 "group relative bg-card/70 backdrop-blur-md border border-border/60 hover:border-primary/60 hover:bg-card/85 rounded-lg cursor-pointer shadow-sm transition-all duration-300 flex flex-col",
                 height,

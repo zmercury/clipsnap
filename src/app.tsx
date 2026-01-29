@@ -5,7 +5,6 @@ import { ClipCard } from './components/ClipCard'
 import { ClipFormModal } from './components/ClipFormModal'
 import { PageFormModal } from './components/PageFormModal'
 import { SearchBar } from './components/SearchBar'
-import { ClipPreview } from './components/ClipPreview'
 import { ThemeProvider } from './components/ThemeProvider'
 import { Plus, Grid3x3, List } from "lucide-react";
 import { motion } from "framer-motion";
@@ -22,8 +21,6 @@ function AppContent() {
   const [isPageModalOpen, setIsPageModalOpen] = useState(false);
   const [editingClip, setEditingClip] = useState<Clip | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
-  const [previewClip, setPreviewClip] = useState<Clip | null>(null);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadPages()
@@ -164,22 +161,9 @@ function AppContent() {
     setActiveFilter(null);
   }
 
-  const handleClipHover = (clip: Clip) => {
-    const timeout = setTimeout(() => {
-      setPreviewClip(clip);
-    }, 500);
-    setHoverTimeout(timeout);
-  }
-
-  const handleClipLeave = () => {
-    if (hoverTimeout) {
-      clearTimeout(hoverTimeout);
-      setHoverTimeout(null);
-    }
-  }
 
   const gridCols = viewMode === 'compact'
-    ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8'
+    ? 'grid-cols-1 max-w-3xl'
     : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6';
 
   return (
@@ -225,13 +209,13 @@ function AppContent() {
                     </button>
                   </div>
                   <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => { setEditingClip(null); setIsClipModalOpen(true); }}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all"
+                    className="bg-primary/95 hover:bg-primary text-primary-foreground px-4 py-2 rounded-md text-xs font-semibold shadow-md flex items-center gap-2 transition-all border border-primary/20"
                     disabled={!activePage}
                   >
-                    <Plus size={18} /> New Clip
+                    <Plus size={16} /> New Clip
                   </motion.button>
                 </div>
               </div>
@@ -272,8 +256,6 @@ function AppContent() {
                     {pinnedClips.map(clip => (
                       <div
                         key={clip.id}
-                        onMouseEnter={() => handleClipHover(clip)}
-                        onMouseLeave={handleClipLeave}
                       >
                         <ClipCard
                           clip={clip}
@@ -295,8 +277,6 @@ function AppContent() {
                 {unpinnedClips.map(clip => (
                   <div
                     key={clip.id}
-                    onMouseEnter={() => handleClipHover(clip)}
-                    onMouseLeave={handleClipLeave}
                   >
                     <ClipCard
                       clip={clip}
@@ -325,7 +305,6 @@ function AppContent() {
       </div>
 
       <SearchBar pages={pages} onResultClick={handleSearchResultClick} />
-      <ClipPreview clip={previewClip} onClose={() => setPreviewClip(null)} />
 
       <ClipFormModal
         isOpen={isClipModalOpen}
