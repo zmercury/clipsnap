@@ -1,32 +1,23 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Layers, Hash } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
+
+interface Page {
+    id: number;
+    name: string;
+    icon: string;
+    created_at: string;
+}
 
 interface SidebarProps {
     isOpen: boolean;
-    categories: string[];
-    activeFilter: string | null;
-    onFilterChange: (category: string | null) => void;
+    pages: Page[];
+    activePage: Page | null;
+    onPageChange: (page: Page) => void;
+    onNewPage: () => void;
+    onDeletePage: (pageId: number) => void;
 }
 
-const COLORS = [
-    "bg-red-500", "bg-orange-500", "bg-amber-500", "bg-yellow-500",
-    "bg-lime-500", "bg-green-500", "bg-emerald-500", "bg-teal-500",
-    "bg-cyan-500", "bg-sky-500", "bg-blue-500", "bg-indigo-500",
-    "bg-violet-500", "bg-purple-500", "bg-fuchsia-500", "bg-pink-500",
-    "bg-rose-500"
-];
-
-function getCategoryColor(category: string) {
-    if (!category) return "bg-gray-500";
-    let hash = 0;
-    for (let i = 0; i < category.length; i++) {
-        hash = category.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % COLORS.length;
-    return COLORS[index];
-}
-
-export function Sidebar({ isOpen, categories, activeFilter, onFilterChange }: SidebarProps) {
+export function Sidebar({ isOpen, pages, activePage, onPageChange, onNewPage, onDeletePage }: SidebarProps) {
     return (
         <AnimatePresence>
             {isOpen && (
@@ -35,49 +26,38 @@ export function Sidebar({ isOpen, categories, activeFilter, onFilterChange }: Si
                     animate={{ width: 260, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="h-full bg-card/30 backdrop-blur-xl border-r border-border/60 overflow-hidden flex flex-col"
+                    className="h-full bg-card/20 backdrop-blur-xl border-r border-border/40 overflow-hidden flex flex-col"
                 >
                     {/* Header */}
-                    <div className="px-5 py-6 border-b border-border/40">
-                        <h2 className="text-sm font-bold text-foreground tracking-tight flex items-center gap-2">
-                            <Hash size={16} className="text-primary" />
-                            Categories
-                        </h2>
+                    <div className="px-4 py-5 border-b border-border/30">
+                        <button
+                            onClick={onNewPage}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-semibold transition-all border border-primary/30"
+                        >
+                            <Plus size={16} /> New Page
+                        </button>
                     </div>
 
-                    {/* All Clips */}
-                    <div className="px-3 py-3">
-                        <SidebarItem
-                            icon={<Layers size={18} />}
-                            label="All Clips"
-                            count={null}
-                            active={activeFilter === null}
-                            onClick={() => onFilterChange(null)}
-                        />
-                    </div>
-
-                    {/* Categories List */}
-                    <div className="flex-1 overflow-y-auto px-3 pb-4 custom-scrollbar">
-                        {categories.length > 0 && (
+                    {/* Pages List */}
+                    <div className="flex-1 overflow-y-auto px-3 py-3 custom-scrollbar">
+                        {pages.length > 0 ? (
                             <div className="space-y-1">
-                                {categories.map(cat => (
-                                    <SidebarItem
-                                        key={cat}
-                                        icon={<div className={`w-3 h-3 rounded-full ${getCategoryColor(cat)} shadow-sm`} />}
-                                        label={cat}
-                                        count={null}
-                                        active={activeFilter === cat}
-                                        onClick={() => onFilterChange(cat)}
+                                {pages.map(page => (
+                                    <PageItem
+                                        key={page.id}
+                                        page={page}
+                                        active={activePage?.id === page.id}
+                                        onClick={() => onPageChange(page)}
+                                        onDelete={() => onDeletePage(page.id)}
                                     />
                                 ))}
                             </div>
-                        )}
-                        {categories.length === 0 && (
-                            <div className="px-3 py-8 text-center">
-                                <div className="w-12 h-12 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <Hash size={20} className="text-muted-foreground/50" />
+                        ) : (
+                            <div className="px-3 py-12 text-center">
+                                <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                    <Plus size={24} className="text-muted-foreground/40" />
                                 </div>
-                                <p className="text-xs text-muted-foreground/60 leading-relaxed">No categories yet.<br />Create a clip to get started.</p>
+                                <p className="text-xs text-muted-foreground/50 leading-relaxed">No pages yet.<br />Click "New Page" to start.</p>
                             </div>
                         )}
                     </div>
@@ -87,27 +67,24 @@ export function Sidebar({ isOpen, categories, activeFilter, onFilterChange }: Si
     );
 }
 
-function SidebarItem({ icon, label, count, active = false, onClick }: { icon: any, label: string, count: number | null, active?: boolean, onClick: () => void }) {
+function PageItem({ page, active, onClick, onDelete }: { page: Page, active: boolean, onClick: () => void, onDelete: () => void }) {
     return (
-        <button
-            onClick={onClick}
-            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group ${active
+        <div
+            className={`group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${active
                     ? 'bg-primary/15 text-primary shadow-sm border border-primary/20'
-                    : 'text-foreground/70 hover:bg-accent/50 hover:text-foreground border border-transparent'
+                    : 'text-foreground/70 hover:bg-accent/40 hover:text-foreground border border-transparent'
                 }`}
+            onClick={onClick}
         >
-            <div className="flex items-center gap-3 min-w-0">
-                <div className={active ? "text-primary" : "text-muted-foreground group-hover:text-foreground transition-colors"}>
-                    {icon}
-                </div>
-                <span className="truncate">{label}</span>
-            </div>
-            {count !== null && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${active ? 'bg-primary/20 text-primary' : 'bg-muted/50 text-muted-foreground'
-                    }`}>
-                    {count}
-                </span>
-            )}
-        </button>
+            <div className="text-xl flex-shrink-0">{page.icon}</div>
+            <span className="truncate flex-1">{page.name}</span>
+            <button
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 rounded text-muted-foreground hover:text-destructive transition-all"
+                title="Delete Page"
+            >
+                <Trash2 size={14} />
+            </button>
+        </div>
     )
 }

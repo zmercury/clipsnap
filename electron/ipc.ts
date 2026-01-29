@@ -1,5 +1,5 @@
 import { ipcMain, clipboard, BrowserWindow } from "electron";
-import { getClips, addClip, deleteClip, updateClip } from "./db";
+import { getClips, addClip, deleteClip, updateClip, getPages, addPage, updatePage, deletePage } from "./db";
 
 export function setupIPC(win: BrowserWindow) {
     // Window Controls
@@ -19,15 +19,36 @@ export function setupIPC(win: BrowserWindow) {
         win.close();
     });
 
-    // Database
+    // Pages
+    ipcMain.removeHandler("db-get-pages");
+    ipcMain.handle("db-get-pages", () => {
+        return getPages();
+    });
+
+    ipcMain.removeHandler("db-add-page");
+    ipcMain.handle("db-add-page", (_, { name, icon }) => {
+        return addPage(name, icon);
+    });
+
+    ipcMain.removeHandler("db-update-page");
+    ipcMain.handle("db-update-page", (_, { id, name, icon }) => {
+        return updatePage(id, name, icon);
+    });
+
+    ipcMain.removeHandler("db-delete-page");
+    ipcMain.handle("db-delete-page", (_, id) => {
+        return deletePage(id);
+    });
+
+    // Clips
     ipcMain.removeHandler("db-get-clips");
-    ipcMain.handle("db-get-clips", () => {
-        return getClips();
+    ipcMain.handle("db-get-clips", (_, pageId) => {
+        return getClips(pageId);
     });
 
     ipcMain.removeHandler("db-add-clip");
-    ipcMain.handle("db-add-clip", (_, { heading, content_html, content_text, category }) => {
-        return addClip(heading, content_html, content_text, category);
+    ipcMain.handle("db-add-clip", (_, { heading, content_html, content_text, category, pageId }) => {
+        return addClip(heading, content_html, content_text, category, pageId);
     });
 
     ipcMain.removeHandler("db-update-clip");
