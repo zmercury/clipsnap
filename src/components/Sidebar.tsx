@@ -23,25 +23,27 @@ export function Sidebar({ isOpen, pages, activePage, onPageChange, onNewPage, on
             {isOpen && (
                 <motion.div
                     initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 260, opacity: 1 }}
+                    animate={{ width: 220, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="h-full bg-card/20 backdrop-blur-xl border-r border-border/40 overflow-hidden flex flex-col"
+                    className="h-full bg-card/40 backdrop-blur-xl border-r border-border/30 overflow-hidden flex flex-col"
                 >
-                    {/* Header */}
-                    <div className="px-4 py-5 border-b border-border/30">
+                    {/* Header with icon-only new page button */}
+                    <div className="px-3 py-3 border-b border-border/20 flex items-center justify-between">
+                        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2">Pages</h2>
                         <button
                             onClick={onNewPage}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-semibold transition-all border border-primary/30"
+                            className="p-1.5 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-md transition-all"
+                            title="New Page"
                         >
-                            <Plus size={16} /> New Page
+                            <Plus size={16} />
                         </button>
                     </div>
 
                     {/* Pages List */}
-                    <div className="flex-1 overflow-y-auto px-3 py-3 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
                         {pages.length > 0 ? (
-                            <div className="space-y-1">
+                            <div className="space-y-0.5 px-2">
                                 {pages.map(page => (
                                     <PageItem
                                         key={page.id}
@@ -53,11 +55,11 @@ export function Sidebar({ isOpen, pages, activePage, onPageChange, onNewPage, on
                                 ))}
                             </div>
                         ) : (
-                            <div className="px-3 py-12 text-center">
-                                <div className="w-16 h-16 bg-muted/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <Plus size={24} className="text-muted-foreground/40" />
+                            <div className="px-4 py-12 text-center">
+                                <div className="w-12 h-12 bg-muted/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <Plus size={18} className="text-muted-foreground/30" />
                                 </div>
-                                <p className="text-xs text-muted-foreground/50 leading-relaxed">No pages yet.<br />Click "New Page" to start.</p>
+                                <p className="text-xs text-muted-foreground/40 leading-relaxed">No pages yet</p>
                             </div>
                         )}
                     </div>
@@ -70,20 +72,20 @@ export function Sidebar({ isOpen, pages, activePage, onPageChange, onNewPage, on
 function PageItem({ page, active, onClick, onDelete }: { page: Page, active: boolean, onClick: () => void, onDelete: () => void }) {
     return (
         <div
-            className={`group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${active
-                    ? 'bg-primary/15 text-primary shadow-sm border border-primary/20'
-                    : 'text-foreground/70 hover:bg-accent/40 hover:text-foreground border border-transparent'
+            className={`group relative flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md transition-all duration-150 cursor-pointer ${active
+                    ? 'bg-primary/10 text-primary border border-primary/20'
+                    : 'text-foreground/60 hover:bg-accent/30 hover:text-foreground border border-transparent'
                 }`}
             onClick={onClick}
         >
-            <div className="text-xl flex-shrink-0">{page.icon}</div>
-            <span className="truncate flex-1">{page.name}</span>
+            <div className="text-base flex-shrink-0">{page.icon}</div>
+            <span className="truncate flex-1 text-xs">{page.name}</span>
             <button
                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 rounded text-muted-foreground hover:text-destructive transition-all"
+                className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-destructive/20 rounded text-muted-foreground hover:text-destructive transition-all"
                 title="Delete Page"
             >
-                <Trash2 size={14} />
+                <Trash2 size={12} />
             </button>
         </div>
     )
