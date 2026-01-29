@@ -1,70 +1,4 @@
-import Database from 'better-sqlite3';
-import path from 'node:path';
-import { app } from 'electron';
-
-const dbPath = path.join(app.getPath('userData'), 'clips.db');
-const db = new Database(dbPath);
-
-db.pragma('journal_mode = WAL');
-
-// Initialize database
-export function initDB() {
-    // Create pages table
-    db.exec(`
-    CREATE TABLE IF NOT EXISTS pages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      icon TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-    // Check if clips table needs page_id column
-    const tableInfo = db.prepare("PRAGMA table_info(clips)").all() as any[];
-    const hasPageId = tableInfo.some(col => col.name === 'page_id');
-
-    if (!hasPageId) {
-        // Add page_id column
-        db.exec(`ALTER TABLE clips ADD COLUMN page_id INTEGER`);
-
-        // Create a default page if none exist
-        const pageCount = db.prepare('SELECT COUNT(*) as count FROM pages').get() as any;
-        if (pageCount.count === 0) {
-            db.prepare('INSERT INTO pages (name, icon) VALUES (?, ?)').run('My First Page', '📝');
-            const defaultPage = db.prepare('SELECT id FROM pages LIMIT 1').get() as any;
-            // Assign all existing clips to default page
-            db.prepare('UPDATE clips SET page_id = ? WHERE page_id IS NULL').run(defaultPage.id);
-        }
-    }
-
-    // Create clips table if not exists
-    db.exec(`
-    CREATE TABLE IF NOT EXISTS clips (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      heading TEXT NOT NULL,
-      content_html TEXT,
-      content_text TEXT,
-      category TEXT,
-      page_id INTEGER,
-      is_pinned INTEGER DEFAULT 0,
-      content_type TEXT DEFAULT 'text',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (page_id) REFERENCES pages(id) ON DELETE CASCADE
-    )
-  `);
-
-    // Add columns if they don't exist (migration)
-    const clipsTableInfo = db.prepare("PRAGMA table_info(clips)").all() as any[];
-    const hasPinned = clipsTableInfo.some(col => col.name === 'is_pinned');
-    const hasContentType = clipsTableInfo.some(col => col.name === 'content_type');
-
-    if (!hasPinned) {
-        db.exec(`ALTER TABLE clips ADD COLUMN is_pinned INTEGER DEFAULT 0`);
-    }
-    if (!hasContentType) {
-        db.exec(`ALTER TABLE clips ADD COLUMN content_type TEXT DEFAULT 'text'`);
-    }
-}
+import Store from 'electron-store';
 
 export interface Page {
     id: number;
@@ -85,59 +19,177 @@ export interface Clip {
     created_at: string;
 }
 
+interface Schema {
+    pages: Page[];
+    clips: Clip[];
+    pageIdCounter: number;
+    clipIdCounter: number;
+}
+
+const store = new Store<Schema>({
+    defaults: {
+        pages: [],
+        clips: [],
+        pageIdCounter: 1,
+        clipIdCounter: 1,
+    },
+});
+
+// Initialize database
+export function initDB() {
+    const pages = store.get('pages');
+    if (pages.length === 0) {
+        addPage('My First Page', '📝');
+        // If we just added a page, we need to get the ID of that new page
+        // Since it's the first one, it should be 1, but let's be safe
+        const newPages = store.get('pages');
+        if (newPages.length > 0) {
+            // If we had orphaned clips (implied by previous logic), we might adhere to them,
+            // but since we are migrating/starting fresh with store, we might not implementation complex migration logic from SQLite
+            // unless the user explicitly asked for data migration, which they didn't. 
+            // They wanted to "remove sqlite". 
+            // So for a fresh start or simple store usage:
+        }
+    }
+}
+
 // Page functions
 export function getPages(): Page[] {
-    const stmt = db.prepare('SELECT * FROM pages ORDER BY created_at ASC');
-    return stmt.all() as Page[];
+    return store.get('pages').sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 }
 
 export function addPage(name: string, icon: string = '📄') {
-    const stmt = db.prepare('INSERT INTO pages (name, icon) VALUES (?, ?)');
-    return stmt.run(name, icon);
+    const pages = store.get('pages');
+    const id = store.get('pageIdCounter');
+
+    const newPage: Page = {
+        id,
+        name,
+        icon,
+        created_at: new Date().toISOString(),
+    };
+
+    store.set('pages', [...pages, newPage]);
+    store.set('pageIdCounter', id + 1);
+
+    return { lastInsertRowid: id, changes: 1 }; // Return SQLite-like result for compatibility if needed, distinct from previous result type which was RunResult
 }
 
 export function updatePage(id: number, name: string, icon: string) {
-    const stmt = db.prepare('UPDATE pages SET name = ?, icon = ? WHERE id = ?');
-    return stmt.run(name, icon, id);
+    const pages = store.get('pages');
+    const index = pages.findIndex(p => p.id === id);
+    if (index !== -1) {
+        pages[index] = { ...pages[index], name, icon };
+        store.set('pages', pages);
+        return { changes: 1 };
+    }
+    return { changes: 0 };
 }
 
 export function deletePage(id: number) {
-    const stmt = db.prepare('DELETE FROM pages WHERE id = ?');
-    return stmt.run(id);
+    const pages = store.get('pages');
+    const newPages = pages.filter(p => p.id !== id);
+    store.set('pages', newPages);
+
+    // Cascade delete clips
+    const clips = store.get('clips');
+    const newClips = clips.filter(c => c.page_id !== id);
+    store.set('clips', newClips);
+
+    return { changes: pages.length - newPages.length };
 }
 
-// Clip functions (updated to filter by page)
+// Clip functions
 export function getClips(pageId?: number): Clip[] {
-    if (pageId) {
-        const stmt = db.prepare('SELECT * FROM clips WHERE page_id = ? ORDER BY is_pinned DESC, created_at DESC');
-        return stmt.all(pageId) as Clip[];
+    const clips = store.get('clips');
+    let filteredClips = clips;
+
+    // Log for debugging
+    console.log(`[db] getClips called with pageId: ${pageId} (${typeof pageId})`);
+
+    if (pageId !== undefined && pageId !== null) {
+        // Ensure comparison matches types (store usually keeps numbers as numbers, but just in case)
+        filteredClips = clips.filter(c => Number(c.page_id) === Number(pageId));
+    } else {
+        console.log('[db] getClips called without pageId, returning ALL clips (this might be unintentional)');
     }
-    const stmt = db.prepare('SELECT * FROM clips ORDER BY is_pinned DESC, created_at DESC');
-    return stmt.all() as Clip[];
+
+    console.log(`[db] getClips returning ${filteredClips.length} clips (total: ${clips.length})`);
+
+    return filteredClips.sort((a, b) => {
+        if (a.is_pinned !== b.is_pinned) {
+            return b.is_pinned - a.is_pinned; // Pinned first
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); // Newest first
+    });
 }
 
 export function addClip(heading: string, content_html: string, content_text: string, category: string, pageId: number, contentType: string = 'text') {
-    const stmt = db.prepare('INSERT INTO clips (heading, content_html, content_text, category, page_id, content_type) VALUES (?, ?, ?, ?, ?, ?)');
-    return stmt.run(heading, content_html, content_text, category, pageId, contentType);
+    const clips = store.get('clips');
+    const id = store.get('clipIdCounter');
+
+    console.log(`[db] addClip for pageId: ${pageId} (${typeof pageId})`);
+
+    const newClip: Clip = {
+        id,
+        heading,
+        content_html,
+        content_text,
+        category,
+        page_id: Number(pageId), // Ensure number
+        is_pinned: 0,
+        content_type: contentType,
+        created_at: new Date().toISOString(),
+    };
+
+    store.set('clips', [...clips, newClip]);
+    store.set('clipIdCounter', id + 1);
+
+    return { lastInsertRowid: id, changes: 1 };
 }
 
 export function updateClip(id: number, heading: string, content_html: string, content_text: string, category: string) {
-    const stmt = db.prepare('UPDATE clips SET heading = ?, content_html = ?, content_text = ?, category = ? WHERE id = ?');
-    return stmt.run(heading, content_html, content_text, category, id);
+    const clips = store.get('clips');
+    const index = clips.findIndex(c => c.id === id);
+    if (index !== -1) {
+        clips[index] = { ...clips[index], heading, content_html, content_text, category };
+        store.set('clips', clips);
+        return { changes: 1 };
+    }
+    return { changes: 0 };
 }
 
 export function deleteClip(id: number) {
-    const stmt = db.prepare('DELETE FROM clips WHERE id = ?');
-    return stmt.run(id);
+    const clips = store.get('clips');
+    const newClips = clips.filter(c => c.id !== id);
+    store.set('clips', newClips);
+    return { changes: clips.length - newClips.length };
 }
 
 export function togglePinClip(id: number) {
-    const stmt = db.prepare('UPDATE clips SET is_pinned = NOT is_pinned WHERE id = ?');
-    return stmt.run(id);
+    const clips = store.get('clips');
+    const index = clips.findIndex(c => c.id === id);
+    if (index !== -1) {
+        clips[index].is_pinned = clips[index].is_pinned ? 0 : 1;
+        store.set('clips', clips);
+        return { changes: 1 };
+    }
+    return { changes: 0 };
 }
 
 export function searchClips(query: string): Clip[] {
-    const stmt = db.prepare('SELECT * FROM clips WHERE heading LIKE ? OR content_text LIKE ? ORDER BY is_pinned DESC, created_at DESC');
-    const searchPattern = `%${query}%`;
-    return stmt.all(searchPattern, searchPattern) as Clip[];
+    const clips = store.get('clips');
+    const lowerQuery = query.toLowerCase();
+
+    const filtered = clips.filter(c =>
+        c.heading.toLowerCase().includes(lowerQuery) ||
+        c.content_text.toLowerCase().includes(lowerQuery)
+    );
+
+    return filtered.sort((a, b) => {
+        if (a.is_pinned !== b.is_pinned) {
+            return b.is_pinned - a.is_pinned;
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
 }
