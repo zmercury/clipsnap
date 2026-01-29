@@ -6,6 +6,7 @@ import { ClipFormModal } from './components/ClipFormModal'
 import { ThemeProvider } from './components/ThemeProvider'
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast, Toaster } from "sonner";
 
 interface Clip {
   id: number;
@@ -88,15 +89,21 @@ function AppContent() {
         text: clip.content_text,
         html: clip.content_html
       })
+      toast.success("Copied to clipboard!", {
+        description: clip.heading,
+        duration: 2000,
+        position: 'bottom-center'
+      });
     } catch (error) {
       console.error("Failed to copy clip", error)
+      toast.error("Failed to copy clip");
     }
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background/90 text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
+    <div className="h-screen w-screen flex flex-col bg-background/80 text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
       {/* Mica-like background layer */}
-      <div className="fixed inset-0 -z-10 bg-background/50 backdrop-blur-3xl" />
+      <div className="fixed inset-0 -z-10 bg-background/30 backdrop-blur-3xl" />
 
       <TitleBar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
@@ -110,22 +117,48 @@ function AppContent() {
 
         <main className="flex-1 flex flex-col min-w-0 relative">
           <div className="p-6 overflow-y-auto h-full scroll-smooth">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold tracking-tight">
-                  {activeFilter ? <span className="flex items-center gap-2"><span className="opacity-50 font-normal">Category /</span> {activeFilter}</span> : "Dashboard"}
+            <div className="max-w-[1600px] mx-auto">
+              <div className="flex justify-between items-center mb-2">
+                <h1 className="text-3xl font-bold tracking-tight">
+                  Dashboard
                 </h1>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => { setEditingClip(null); setIsModalOpen(true); }}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-primary/20 flex items-center gap-2 transition-all"
                 >
                   <Plus size={18} /> New Clip
                 </motion.button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
+              {/* Filters Row */}
+              <div className="flex flex-wrap gap-2 mb-8">
+                <button
+                  onClick={() => setActiveFilter(null)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeFilter === null
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent hover:border-border"
+                    }`}
+                >
+                  All
+                </button>
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveFilter(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-2 ${activeFilter === cat
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent hover:border-border"
+                      }`}
+                  >
+                    {activeFilter !== cat && <div className={`w-2 h-2 rounded-full ${getCategoryColor(cat)}`} />}
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-20">
                 {filteredClips.map(clip => (
                   <ClipCard
                     key={clip.id}
@@ -161,8 +194,27 @@ function AppContent() {
           category: editingClip.category
         } : undefined}
       />
+      <Toaster theme="system" closeButton richColors />
     </div>
   )
+}
+
+function getCategoryColor(category: string) {
+  // Shared color logic, ideally move to a util
+  const COLORS = [
+    "bg-red-500", "bg-orange-500", "bg-amber-500", "bg-yellow-500",
+    "bg-lime-500", "bg-green-500", "bg-emerald-500", "bg-teal-500",
+    "bg-cyan-500", "bg-sky-500", "bg-blue-500", "bg-indigo-500",
+    "bg-violet-500", "bg-purple-500", "bg-fuchsia-500", "bg-pink-500",
+    "bg-rose-500"
+  ];
+  if (!category) return "bg-gray-500";
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % COLORS.length;
+  return COLORS[index];
 }
 
 function App() {

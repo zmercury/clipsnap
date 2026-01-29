@@ -37,6 +37,8 @@ function createWindow() {
 		width: 1000,
 		height: 700,
 		frame: false, // Custom Title Bar
+		transparent: true,
+		backgroundColor: "#00000000",
 		webPreferences: {
 			preload: path.join(__dirname, "preload.mjs"),
 		},
