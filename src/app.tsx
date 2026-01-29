@@ -168,9 +168,12 @@ function AppContent() {
           isOpen={sidebarOpen}
           pages={pages}
           activePage={activePage}
+          categories={categories}
+          activeFilter={activeFilter}
           onPageChange={setActivePage}
           onNewPage={() => setIsPageModalOpen(true)}
           onDeletePage={handleDeletePage}
+          onFilterChange={setActiveFilter}
         />
 
         <main className="flex-1 flex flex-col min-w-0 relative">

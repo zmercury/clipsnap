@@ -5,7 +5,7 @@ export function TitleBar({ toggleSidebar }: { toggleSidebar: () => void }) {
     const { theme, setTheme } = useTheme();
 
     return (
-        <div className="h-10 bg-background/85 backdrop-blur-md flex items-center justify-between px-3 select-none border-b border-border/50 fixed top-0 left-0 right-0 z-50 transition-colors duration-300">
+        <div className="h-10 bg-background/95 backdrop-blur-md flex items-center justify-between px-3 select-none border-b border-border/50 fixed top-0 left-0 right-0 z-50 transition-colors duration-300">
             <div className="flex items-center gap-3 drag-region w-full h-full">
                 <button onClick={toggleSidebar} className="no-drag p-1.5 hover:bg-accent text-foreground/70 hover:text-foreground rounded-md transition-colors">
                     <PanelLeft size={16} />
