@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Save, ClipboardPaste } from "lucide-react";
+import { X, Save, ClipboardPaste, Tag } from "lucide-react";
 
 interface ClipFormData {
     id?: number;
@@ -14,13 +14,15 @@ interface ClipFormModalProps {
     onClose: () => void;
     onSave: (data: ClipFormData) => Promise<void>;
     initialData?: ClipFormData;
+    existingCategories?: string[];
 }
 
-export function ClipFormModal({ isOpen, onClose, onSave, initialData }: ClipFormModalProps) {
+export function ClipFormModal({ isOpen, onClose, onSave, initialData, existingCategories = [] }: ClipFormModalProps) {
     const [heading, setHeading] = useState("");
     const [content, setContent] = useState("");
     const [category, setCategory] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -61,6 +63,10 @@ export function ClipFormModal({ isOpen, onClose, onSave, initialData }: ClipForm
         }
     };
 
+    const filteredSuggestions = existingCategories.filter(cat =>
+        cat.toLowerCase().includes(category.toLowerCase()) && cat !== category
+    );
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -77,7 +83,7 @@ export function ClipFormModal({ isOpen, onClose, onSave, initialData }: ClipForm
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-lg bg-background border border-border rounded-xl shadow-2xl overflow-hidden"
+                        className="relative w-full max-w-lg bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl overflow-hidden"
                     >
                         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                             <h2 className="text-lg font-semibold tracking-tight">
@@ -96,20 +102,58 @@ export function ClipFormModal({ isOpen, onClose, onSave, initialData }: ClipForm
                                     required
                                     value={heading}
                                     onChange={e => setHeading(e.target.value)}
-                                    className="w-full bg-secondary/50 border border-transparent focus:border-primary/50 focus:bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                    className="w-full bg-secondary/50 border border-border/50 focus:border-primary/50 focus:bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                     placeholder="Enter a heading..."
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-muted-foreground mb-1">Category / ID</label>
+                            <div className="relative">
+                                <label className="block text-sm font-medium text-muted-foreground mb-1 flex items-center gap-2">
+                                    <Tag size={14} />
+                                    Category / ID
+                                </label>
                                 <input
                                     type="text"
                                     value={category}
                                     onChange={e => setCategory(e.target.value)}
-                                    className="w-full bg-secondary/50 border border-transparent focus:border-primary/50 focus:bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                    onFocus={() => setShowSuggestions(true)}
+                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                                    className="w-full bg-secondary/50 border border-border/50 focus:border-primary/50 focus:bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                                     placeholder="e.g. Work, Ideas, Code"
                                 />
+
+                                {/* Suggestions Dropdown */}
+                                {showSuggestions && filteredSuggestions.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-background/95 backdrop-blur-xl border border-border rounded-lg shadow-lg overflow-hidden z-10">
+                                        {filteredSuggestions.map(cat => (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                onClick={() => { setCategory(cat); setShowSuggestions(false); }}
+                                                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex items-center gap-2"
+                                            >
+                                                <Tag size={12} className="text-muted-foreground" />
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Quick Suggestions */}
+                                {existingCategories.length > 0 && (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                        {existingCategories.slice(0, 5).map(cat => (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                onClick={() => setCategory(cat)}
+                                                className="px-2 py-1 text-xs bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md transition-colors border border-border/40"
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div>
@@ -127,7 +171,7 @@ export function ClipFormModal({ isOpen, onClose, onSave, initialData }: ClipForm
                                     required
                                     value={content}
                                     onChange={e => setContent(e.target.value)}
-                                    className="w-full h-32 bg-secondary/50 border border-transparent focus:border-primary/50 focus:bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                                    className="w-full h-32 bg-secondary/50 border border-border/50 focus:border-primary/50 focus:bg-background rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
                                     placeholder="Paste or type content here..."
                                 />
                             </div>
@@ -143,7 +187,7 @@ export function ClipFormModal({ isOpen, onClose, onSave, initialData }: ClipForm
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg flex items-center gap-2 shadow-sm transition-all"
+                                    className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
                                 >
                                     <Save size={16} /> Save
                                 </button>

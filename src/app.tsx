@@ -92,7 +92,7 @@ function AppContent() {
       toast.success("Copied to clipboard!", {
         description: clip.heading,
         duration: 2000,
-        position: 'bottom-center'
+        position: 'bottom-right'
       });
     } catch (error) {
       console.error("Failed to copy clip", error)
@@ -101,10 +101,7 @@ function AppContent() {
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background/80 text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
-      {/* Mica-like background layer */}
-      <div className="fixed inset-0 -z-10 bg-background/30 backdrop-blur-3xl" />
-
+    <div className="h-screen w-screen flex flex-col text-foreground overflow-hidden font-sans selection:bg-primary/20 selection:text-primary transition-colors duration-300">
       <TitleBar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className="flex-1 flex overflow-hidden pt-10">
@@ -137,8 +134,8 @@ function AppContent() {
                 <button
                   onClick={() => setActiveFilter(null)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeFilter === null
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent hover:border-border"
+                    ? "bg-primary text-primary-foreground shadow-sm border border-primary/30"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/60 hover:border-border"
                     }`}
                 >
                   All
@@ -148,8 +145,8 @@ function AppContent() {
                     key={cat}
                     onClick={() => setActiveFilter(cat)}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-2 ${activeFilter === cat
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent hover:border-border"
+                      ? "bg-primary text-primary-foreground shadow-sm border border-primary/30"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/60 hover:border-border"
                       }`}
                   >
                     {activeFilter !== cat && <div className={`w-2 h-2 rounded-full ${getCategoryColor(cat)}`} />}
@@ -158,7 +155,7 @@ function AppContent() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-20">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 pb-20">
                 {filteredClips.map(clip => (
                   <ClipCard
                     key={clip.id}
@@ -187,6 +184,7 @@ function AppContent() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveClip}
+        existingCategories={categories}
         initialData={editingClip ? {
           id: editingClip.id,
           heading: editingClip.heading,
