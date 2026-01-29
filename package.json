@@ -8,6 +8,7 @@
     "build:web": "vite build",
     "build:desktop": "bun run scripts/build-desktop.ts",
     "build:portable": "npm run build:web && electron-forge package && electron-forge make",
+    "build:linux": "npm run build:web && electron-forge package --platform=linux --arch=x64 && electron-forge make --platform=linux --arch=x64",
     "start:web": "vite preview",
     "start:desktop": "electron dist-electron/main.js",
     "lint": "bunx @biomejs/biome check --write src",
