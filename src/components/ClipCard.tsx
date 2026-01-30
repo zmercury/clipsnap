@@ -47,7 +47,7 @@ function renderContent(text: string, contentType: string) {
         const parts = text.split(urlRegex);
         return parts.map((part, i) => {
             if (part.match(urlRegex)) {
-                return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={e => e.stopPropagation()}>{part}</a>;
+                return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-medium" onClick={e => e.stopPropagation()}>{part}</a>;
             }
             return part;
         });
@@ -60,26 +60,26 @@ export function ClipCard({ clip, onClick, onEdit, onDelete, onTogglePin, isPinne
     if (compact && !isPinned) {
         return (
             <motion.div
-                className="group relative bg-card/60 backdrop-blur-md border border-border/40 hover:border-primary/40 hover:bg-card/80 rounded-md px-3 py-2 cursor-pointer transition-all duration-200 flex items-center gap-3 overflow-hidden"
+                className="group relative bg-card/60 backdrop-blur-md border border-border/40 hover:border-primary/40 hover:bg-card/80 rounded-lg px-4 py-3 cursor-pointer transition-all duration-200 flex items-center gap-4 overflow-hidden"
                 onClick={onClick}
             >
-                <div className={clsx("w-1 h-4 rounded-full flex-shrink-0", getCategoryColor(clip.category))} />
+                <div className={clsx("w-1.5 h-6 rounded-full flex-shrink-0 shadow-sm", getCategoryColor(clip.category))} />
 
-                <h3 className="text-xs font-semibold text-foreground truncate min-w-[120px] max-w-[200px] tracking-tight">{clip.heading}</h3>
+                <h3 className="text-sm font-bold text-foreground truncate min-w-[140px] max-w-[240px] tracking-tight">{clip.heading}</h3>
 
-                <p className="text-[11px] text-muted-foreground/70 truncate flex-1 font-normal">
+                <p className="text-xs text-muted-foreground/80 truncate flex-1 font-normal italic">
                     {clip.content_text || "No content"}
                 </p>
 
-                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={onTogglePin} className="p-1 hover:bg-background/80 rounded text-muted-foreground/60 hover:text-primary transition-colors">
-                        <Pin size={11} className={clip.is_pinned === 1 ? "fill-current" : ""} />
+                <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity items-center">
+                    <button onClick={onTogglePin} className="p-1.5 hover:bg-primary/10 rounded-md text-muted-foreground/60 hover:text-primary transition-all">
+                        <Pin size={14} className={clip.is_pinned === 1 ? "fill-current" : ""} />
                     </button>
-                    <button onClick={onEdit} className="p-1 hover:bg-background/80 rounded text-muted-foreground/60 hover:text-primary transition-colors">
-                        <Pencil size={11} />
+                    <button onClick={onEdit} className="p-1.5 hover:bg-primary/10 rounded-md text-muted-foreground/60 hover:text-primary transition-all">
+                        <Pencil size={14} />
                     </button>
-                    <button onClick={onDelete} className="p-1 hover:bg-background/80 rounded text-muted-foreground/60 hover:text-destructive transition-colors">
-                        <Trash2 size={11} />
+                    <button onClick={onDelete} className="p-1.5 hover:bg-destructive/10 rounded-md text-muted-foreground/60 hover:text-destructive transition-all">
+                        <Trash2 size={14} />
                     </button>
                 </div>
             </motion.div>
@@ -87,71 +87,73 @@ export function ClipCard({ clip, onClick, onEdit, onDelete, onTogglePin, isPinne
     }
 
     // Grid/Pinned View
-    const height = isPinned ? 'h-20' : 'h-32';
-    const padding = isPinned ? 'p-2' : 'p-3';
-    const textSize = isPinned ? 'text-xs' : 'text-sm';
-    const contentSize = isPinned ? 'text-[10px]' : 'text-xs';
+    const height = isPinned ? 'h-32' : 'h-48';
+    const padding = isPinned ? 'p-3' : 'p-5';
+    const headingSize = isPinned ? 'text-sm' : 'text-lg';
+    const contentSize = isPinned ? 'text-xs' : 'text-sm';
+    const tagSize = isPinned ? 'text-[10px]' : 'text-[11px]';
 
     return (
         <motion.div
             className={clsx(
-                "group relative bg-card/70 backdrop-blur-md border border-border/60 hover:border-primary/60 hover:bg-card/85 rounded-lg cursor-pointer shadow-sm transition-all duration-300 flex flex-col",
+                "group relative bg-card/70 backdrop-blur-md border border-border/60 hover:border-primary/60 hover:bg-card/85 rounded-xl cursor-pointer shadow-md hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden",
                 height,
                 padding
             )}
             onClick={onClick}
         >
-            <div className={clsx("flex justify-between items-start", isPinned ? "mb-1" : "mb-2")}>
-                <div className={clsx("text-[9px] font-bold px-1.5 py-0.5 rounded-md text-white shadow-sm truncate max-w-[100px] uppercase tracking-wide", getCategoryColor(clip.category))}>
+            <div className="flex justify-between items-start mb-3">
+                <div className={clsx("font-bold px-2 py-0.5 rounded-lg text-white shadow-sm truncate max-w-[140px] uppercase tracking-wider", tagSize, getCategoryColor(clip.category))}>
                     {clip.category || "Uncategorized"}
                 </div>
-                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                         onClick={onTogglePin}
                         className={clsx(
-                            "p-1 rounded transition-colors",
+                            "p-1.5 rounded-md transition-all",
                             clip.is_pinned === 1
                                 ? "bg-primary/20 text-primary hover:bg-primary/30"
                                 : "hover:bg-background/80 text-muted-foreground hover:text-primary"
                         )}
                         title={clip.is_pinned === 1 ? "Unpin" : "Pin"}
                     >
-                        <Pin size={12} className={clip.is_pinned === 1 ? "fill-current" : ""} />
+                        <Pin size={14} className={clip.is_pinned === 1 ? "fill-current" : ""} />
                     </button>
                     <button
                         onClick={onEdit}
-                        className="p-1 hover:bg-background/80 rounded text-muted-foreground hover:text-primary transition-colors"
+                        className="p-1.5 hover:bg-background/80 rounded-md text-muted-foreground hover:text-primary transition-all"
                         title="Edit"
                     >
-                        <Pencil size={12} />
+                        <Pencil size={14} />
                     </button>
                     <button
                         onClick={onDelete}
-                        className="p-1 hover:bg-background/80 rounded text-muted-foreground hover:text-destructive transition-colors"
+                        className="p-1.5 hover:bg-background/80 rounded-md text-muted-foreground hover:text-destructive transition-all"
                         title="Delete"
                     >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                     </button>
                 </div>
             </div>
 
-            <h3 className={clsx(textSize, "font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors tracking-tight", isPinned ? "mb-0.5" : "mb-1.5")}>{clip.heading}</h3>
+            <h3 className={clsx(headingSize, "font-extrabold text-foreground line-clamp-1 group-hover:text-primary transition-colors tracking-tight mb-2")}>
+                {clip.heading}
+            </h3>
 
             <div className="flex-1 overflow-hidden relative">
-                <p className={clsx(contentSize, "text-muted-foreground/90 leading-snug break-words whitespace-pre-wrap font-normal", isPinned ? "line-clamp-1" : "line-clamp-3")}>
+                <p className={clsx(contentSize, "text-muted-foreground/90 leading-relaxed break-words whitespace-pre-wrap font-normal", isPinned ? "line-clamp-2" : "line-clamp-4")}>
                     {renderContent(clip.content_text || "No text content", clip.content_type)}
                 </p>
-                {!isPinned && <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-card/70 to-transparent pointer-events-none" />}
+                {!isPinned && <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card/80 to-transparent pointer-events-none" />}
             </div>
 
-            {!isPinned && (
-                <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground/50 font-medium">
-                    <span>{new Date(clip.created_at).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1 group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100">
-                        <Clipboard size={10} />
-                    </span>
-                </div>
-            )}
+            <div className="mt-4 flex items-center justify-between text-[11px] text-muted-foreground/60 font-semibold tracking-wide border-t border-border/10 pt-3">
+                <span>{new Date(clip.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span className="flex items-center gap-1.5 group-hover:text-primary transition-colors">
+                    <Clipboard size={12} className="opacity-40 group-hover:opacity-100" />
+                    <span className="uppercase opacity-0 group-hover:opacity-100 transition-all">Copy</span>
+                </span>
+            </div>
         </motion.div>
     );
 }
