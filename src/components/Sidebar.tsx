@@ -133,6 +133,7 @@ export function Sidebar({ isOpen, pages, activePage, categories, activeFilter, o
 }
 
 
+
 function PageItem({ page, active, onClick, onEdit, onDelete }: { page: Page, active: boolean, onClick: () => void, onEdit: () => void, onDelete: () => void }) {
     return (
         <div
