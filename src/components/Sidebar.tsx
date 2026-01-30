@@ -16,6 +16,7 @@ interface SidebarProps {
     activeFilter: string | null;
     onPageChange: (page: Page) => void;
     onNewPage: () => void;
+    onEditPage: (page: Page) => void;
     onDeletePage: (pageId: number) => void;
     onFilterChange: (category: string | null) => void;
 }
@@ -37,7 +38,7 @@ function getCategoryColor(category: string) {
     return COLORS[index];
 }
 
-export function Sidebar({ isOpen, pages, activePage, categories, activeFilter, onPageChange, onNewPage, onDeletePage, onFilterChange }: SidebarProps) {
+export function Sidebar({ isOpen, pages, activePage, categories, activeFilter, onPageChange, onNewPage, onEditPage, onDeletePage, onFilterChange }: SidebarProps) {
     return (
         <AnimatePresence>
             {isOpen && (
@@ -72,6 +73,7 @@ export function Sidebar({ isOpen, pages, activePage, categories, activeFilter, o
                                             page={page}
                                             active={activePage?.id === page.id}
                                             onClick={() => onPageChange(page)}
+                                            onEdit={() => onEditPage(page)}
                                             onDelete={() => onDeletePage(page.id)}
                                         />
                                     ))}
@@ -130,24 +132,37 @@ export function Sidebar({ isOpen, pages, activePage, categories, activeFilter, o
     );
 }
 
-function PageItem({ page, active, onClick, onDelete }: { page: Page, active: boolean, onClick: () => void, onDelete: () => void }) {
+import { Pencil, Trash2, Hash, Plus } from "lucide-react";
+
+// ... existing code ...
+
+function PageItem({ page, active, onClick, onEdit, onDelete }: { page: Page, active: boolean, onClick: () => void, onEdit: () => void, onDelete: () => void }) {
     return (
         <div
             className={`group relative flex items-center gap-2 px-2 py-1.5 text-sm font-medium rounded-md transition-all duration-150 cursor-pointer ${active
-                    ? 'bg-primary/5 text-primary border border-primary/10'
-                    : 'text-foreground/60 hover:bg-accent/30 hover:text-foreground border border-transparent'
+                ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm'
+                : 'text-foreground/60 hover:bg-accent/30 hover:text-foreground border border-transparent'
                 }`}
             onClick={onClick}
         >
             <div className="text-base flex-shrink-0">{page.icon}</div>
             <span className="truncate flex-1 text-xs">{page.name}</span>
-            <button
-                onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-destructive/20 rounded text-muted-foreground hover:text-destructive transition-all"
-                title="Delete Page"
-            >
-                <Trash2 size={12} />
-            </button>
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                    onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                    className="p-1 hover:bg-primary/10 rounded text-muted-foreground hover:text-primary transition-all"
+                    title="Edit Page"
+                >
+                    <Pencil size={11} />
+                </button>
+                <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                    className="p-1 hover:bg-destructive/10 rounded text-muted-foreground hover:text-destructive transition-all"
+                    title="Delete Page"
+                >
+                    <Trash2 size={11} />
+                </button>
+            </div>
         </div>
     )
 }
@@ -157,8 +172,8 @@ function CategoryItem({ label, color, active, onClick }: { label: string, color?
         <button
             onClick={onClick}
             className={`w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-150 ${active
-                    ? 'bg-primary/5 text-primary border border-primary/10'
-                    : 'text-foreground/60 hover:bg-accent/30 hover:text-foreground border border-transparent'
+                ? 'bg-primary/5 text-primary border border-primary/10'
+                : 'text-foreground/60 hover:bg-accent/30 hover:text-foreground border border-transparent'
                 }`}
         >
             {color && <div className={`w-2 h-2 rounded-full ${color} flex-shrink-0`} />}

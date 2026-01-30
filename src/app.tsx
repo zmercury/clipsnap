@@ -21,6 +21,7 @@ function AppContent() {
   const [isPageModalOpen, setIsPageModalOpen] = useState(false);
   const [editingClip, setEditingClip] = useState<Clip | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'compact'>('grid');
+  const [editingPage, setEditingPage] = useState<Page | null>(null);
 
   useEffect(() => {
     loadPages()
@@ -178,7 +179,8 @@ function AppContent() {
           categories={categories}
           activeFilter={activeFilter}
           onPageChange={setActivePage}
-          onNewPage={() => setIsPageModalOpen(true)}
+          onNewPage={() => { setEditingPage(null); setIsPageModalOpen(true); }}
+          onEditPage={(page) => { setEditingPage(page); setIsPageModalOpen(true); }}
           onDeletePage={handleDeletePage}
           onFilterChange={setActiveFilter}
         />
@@ -323,6 +325,11 @@ function AppContent() {
         isOpen={isPageModalOpen}
         onClose={() => setIsPageModalOpen(false)}
         onSave={handleSavePage}
+        initialData={editingPage ? {
+          id: editingPage.id,
+          name: editingPage.name,
+          icon: editingPage.icon
+        } : undefined}
       />
 
       <Toaster theme="system" closeButton richColors />
