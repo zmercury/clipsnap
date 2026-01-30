@@ -9,6 +9,24 @@ import { ThemeProvider } from './components/ThemeProvider'
 import { Plus, Grid3x3, List } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast, Toaster } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  rectSortingStrategy
+} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 
 function AppContent() {
@@ -140,6 +158,47 @@ function AppContent() {
     if (activePage) await loadClips(activePage.id);
   }
 
+  const handleDragEnd = async (event: DragEndEvent, items: Clip[]) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = items.findIndex((item) => item.id === active.id);
+    const newIndex = items.findIndex((item) => item.id === over.id);
+
+    const newItems = arrayMove(items, oldIndex, newIndex);
+
+
+    // Actually, it's easier to just rebuild the full clips array
+    const otherClips = clips.filter(c => !items.find(i => i.id === c.id));
+    const finalClips = [...otherClips, ...newItems];
+    setClips(finalClips);
+
+    // Persist to DB
+    const orders = newItems.map((clip, index) => ({
+      id: clip.id,
+      order_index: index
+    }));
+
+    try {
+      await window.api.db.updateClipsOrder(orders);
+    } catch (error) {
+      console.error("Failed to update order", error);
+      toast.error("Failed to save new order");
+      if (activePage) loadClips(activePage.id);
+    }
+  }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const handleCopyClip = async (clip: Clip) => {
     try {
       await window.api.clipboard.write({
@@ -254,53 +313,71 @@ function AppContent() {
                   <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                     📌 Pinned
                   </h2>
-                  <div className={`grid ${gridCols} gap-3`}>
-                    {pinnedClips.map(clip => (
-                      <div
-                        key={clip.id}
-                      >
-                        <ClipCard
-                          clip={clip}
-                          onClick={() => handleCopyClip(clip)}
-                          onEdit={(e: React.MouseEvent) => { e.stopPropagation(); setEditingClip(clip); setIsClipModalOpen(true); }}
-                          onDelete={(e: React.MouseEvent) => handleDeleteClip(e, clip.id)}
-                          onTogglePin={(e: React.MouseEvent) => handleTogglePin(e, clip.id)}
-                          isPinned={true}
-                          compact={viewMode === 'compact'}
-                        />
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => handleDragEnd(e, pinnedClips)}
+                  >
+                    <SortableContext
+                      items={pinnedClips.map(c => c.id)}
+                      strategy={rectSortingStrategy}
+                    >
+                      <div className={`grid ${gridCols} gap-3`}>
+                        {pinnedClips.map(clip => (
+                          <SortableClipItem
+                            key={clip.id}
+                            clip={clip}
+                            viewMode={viewMode}
+                            handleCopyClip={handleCopyClip}
+                            setEditingClip={setEditingClip}
+                            setIsClipModalOpen={setIsClipModalOpen}
+                            handleDeleteClip={handleDeleteClip}
+                            handleTogglePin={handleTogglePin}
+                            isPinned={true}
+                          />
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               )}
 
               {/* Regular Clips */}
-              <div className={`grid ${gridCols} gap-4 pb-20`}>
-                {unpinnedClips.map(clip => (
-                  <div
-                    key={clip.id}
-                  >
-                    <ClipCard
-                      clip={clip}
-                      onClick={() => handleCopyClip(clip)}
-                      onEdit={(e: React.MouseEvent) => { e.stopPropagation(); setEditingClip(clip); setIsClipModalOpen(true); }}
-                      onDelete={(e: React.MouseEvent) => handleDeleteClip(e, clip.id)}
-                      onTogglePin={(e: React.MouseEvent) => handleTogglePin(e, clip.id)}
-                      compact={viewMode === 'compact'}
-                    />
-                  </div>
-                ))}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(e) => handleDragEnd(e, unpinnedClips)}
+              >
+                <SortableContext
+                  items={unpinnedClips.map(c => c.id)}
+                  strategy={viewMode === 'compact' ? verticalListSortingStrategy : rectSortingStrategy}
+                >
+                  <div className={`grid ${gridCols} gap-4 pb-20`}>
+                    {unpinnedClips.map(clip => (
+                      <SortableClipItem
+                        key={clip.id}
+                        clip={clip}
+                        viewMode={viewMode}
+                        handleCopyClip={handleCopyClip}
+                        setEditingClip={setEditingClip}
+                        setIsClipModalOpen={setIsClipModalOpen}
+                        handleDeleteClip={handleDeleteClip}
+                        handleTogglePin={handleTogglePin}
+                      />
+                    ))}
 
-                {filteredClips.length === 0 && (
-                  <div className="col-span-full text-center py-20 text-muted-foreground flex flex-col items-center">
-                    <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
-                      <span className="text-3xl grayscale opacity-50">📋</span>
-                    </div>
-                    <p className="text-lg font-medium">No clips yet</p>
-                    <p className="text-sm text-muted-foreground/60 mt-1">Click "New Clip" to get started</p>
+                    {filteredClips.length === 0 && (
+                      <div className="col-span-full text-center py-20 text-muted-foreground flex flex-col items-center">
+                        <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
+                          <span className="text-3xl grayscale opacity-50">📋</span>
+                        </div>
+                        <p className="text-lg font-medium">No clips yet</p>
+                        <p className="text-sm text-muted-foreground/60 mt-1">Click "New Clip" to get started</p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </SortableContext>
+              </DndContext>
             </div>
           </div>
         </main>
@@ -353,6 +430,56 @@ function getCategoryColor(category: string) {
   }
   const index = Math.abs(hash) % COLORS.length;
   return COLORS[index];
+}
+
+function SortableClipItem({
+  clip,
+  viewMode,
+  handleCopyClip,
+  setEditingClip,
+  setIsClipModalOpen,
+  handleDeleteClip,
+  handleTogglePin,
+  isPinned = false
+}: {
+  clip: Clip,
+  viewMode: 'grid' | 'compact',
+  handleCopyClip: (clip: Clip) => void,
+  setEditingClip: (clip: Clip) => void,
+  setIsClipModalOpen: (open: boolean) => void,
+  handleDeleteClip: (e: React.MouseEvent, id: number) => void,
+  handleTogglePin: (e: React.MouseEvent, id: number) => void,
+  isPinned?: boolean
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: clip.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 100 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <ClipCard
+        clip={clip}
+        onClick={() => handleCopyClip(clip)}
+        onEdit={(e: React.MouseEvent) => { e.stopPropagation(); setEditingClip(clip); setIsClipModalOpen(true); }}
+        onDelete={(e: React.MouseEvent) => handleDeleteClip(e, clip.id)}
+        onTogglePin={(e: React.MouseEvent) => handleTogglePin(e, clip.id)}
+        isPinned={isPinned}
+        compact={viewMode === 'compact'}
+      />
+    </div>
+  );
 }
 
 function App() {

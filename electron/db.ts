@@ -16,6 +16,7 @@ export interface Clip {
     page_id: number;
     is_pinned: number;
     content_type: string;
+    order_index: number;
     created_at: string;
 }
 
@@ -120,7 +121,8 @@ export function getClips(pageId?: number): Clip[] {
         if (a.is_pinned !== b.is_pinned) {
             return b.is_pinned - a.is_pinned; // Pinned first
         }
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); // Newest first
+        // Then by order_index
+        return (a.order_index || 0) - (b.order_index || 0);
     });
 }
 
@@ -139,6 +141,7 @@ export function addClip(heading: string, content_html: string, content_text: str
         page_id: Number(pageId), // Ensure number
         is_pinned: 0,
         content_type: contentType,
+        order_index: -Date.now(), // New clips at the top by default (negative timestamp for ascending sort)
         created_at: new Date().toISOString(),
     };
 
@@ -192,4 +195,15 @@ export function searchClips(query: string): Clip[] {
         }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
+}
+export function updateClipsOrder(orders: { id: number, order_index: number }[]) {
+    const clips = store.get('clips');
+    orders.forEach(order => {
+        const index = clips.findIndex(c => c.id === order.id);
+        if (index !== -1) {
+            clips[index].order_index = order.order_index;
+        }
+    });
+    store.set('clips', clips);
+    return { changes: orders.length };
 }

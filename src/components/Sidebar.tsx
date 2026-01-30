@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, Hash } from "lucide-react";
+import { Plus, Trash2, Hash, Pencil } from "lucide-react";
 
 interface Page {
     id: number;
@@ -132,9 +132,6 @@ export function Sidebar({ isOpen, pages, activePage, categories, activeFilter, o
     );
 }
 
-import { Pencil, Trash2, Hash, Plus } from "lucide-react";
-
-// ... existing code ...
 
 function PageItem({ page, active, onClick, onEdit, onDelete }: { page: Page, active: boolean, onClick: () => void, onEdit: () => void, onDelete: () => void }) {
     return (

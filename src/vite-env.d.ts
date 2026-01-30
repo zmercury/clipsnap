@@ -16,6 +16,7 @@ interface Clip {
     page_id: number;
     is_pinned: number;
     content_type: string;
+    order_index: number;
     created_at: string;
 }
 
@@ -37,6 +38,7 @@ interface Window {
             deleteClip: (id: number) => Promise<any>;
             togglePin: (id: number) => Promise<any>;
             searchClips: (query: string) => Promise<Clip[]>;
+            updateClipsOrder: (orders: { id: number; order_index: number }[]) => Promise<any>;
         };
         clipboard: {
             read: () => Promise<{ text: string; html: string }>;

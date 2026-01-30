@@ -1,5 +1,5 @@
 import { ipcMain, clipboard, BrowserWindow } from "electron";
-import { getClips, addClip, deleteClip, updateClip, getPages, addPage, updatePage, deletePage, togglePinClip, searchClips } from "./db";
+import { getClips, addClip, deleteClip, updateClip, getPages, addPage, updatePage, deletePage, togglePinClip, searchClips, updateClipsOrder } from "./db";
 
 export function setupIPC(win: BrowserWindow) {
     // Window Controls
@@ -69,6 +69,11 @@ export function setupIPC(win: BrowserWindow) {
     ipcMain.removeHandler("db-search-clips");
     ipcMain.handle("db-search-clips", (_, query) => {
         return searchClips(query);
+    });
+
+    ipcMain.removeHandler("db-update-clips-order");
+    ipcMain.handle("db-update-clips-order", (_, orders) => {
+        return updateClipsOrder(orders);
     });
 
     // Clipboard
