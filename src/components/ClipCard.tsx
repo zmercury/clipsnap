@@ -87,8 +87,8 @@ export function ClipCard({ clip, onClick, onEdit, onDelete, onTogglePin, isPinne
     }
 
     // Grid/Pinned View
-    const height = isPinned ? 'h-32' : 'h-48';
-    const padding = isPinned ? 'p-3' : 'p-5';
+    const height = isPinned ? 'h-36' : 'h-48';
+    const padding = isPinned ? 'p-4' : 'p-5';
     const headingSize = isPinned ? 'text-sm' : 'text-lg';
     const contentSize = isPinned ? 'text-xs' : 'text-sm';
     const tagSize = isPinned ? 'text-[10px]' : 'text-[11px]';
@@ -136,7 +136,7 @@ export function ClipCard({ clip, onClick, onEdit, onDelete, onTogglePin, isPinne
                 </div>
             </div>
 
-            <h3 className={clsx(headingSize, "font-extrabold text-foreground line-clamp-1 group-hover:text-primary transition-colors tracking-tight mb-2")}>
+            <h3 className={clsx(headingSize, "font-bold text-foreground/90 line-clamp-2 group-hover:text-primary transition-colors tracking-tight mb-2 min-h-[1.5rem]")}>
                 {clip.heading}
             </h3>
 

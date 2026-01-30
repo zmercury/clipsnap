@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('api', {
     deleteClip: (id: number) => ipcRenderer.invoke('db-delete-clip', id),
     togglePin: (id: number) => ipcRenderer.invoke('db-toggle-pin', id),
     searchClips: (query: string) => ipcRenderer.invoke('db-search-clips', query),
+    updateClipsOrder: (orders: { id: number, order_index: number }[]) => ipcRenderer.invoke('db-update-clips-order', orders),
   },
   clipboard: {
     read: () => ipcRenderer.invoke('clipboard-read'),
